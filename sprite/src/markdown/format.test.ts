@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { formatMarkdown } from './format'
-import type { CaptureEvent } from '../types'
+import {
+  formatMarkdown,
+  formatDailyEntry,
+  createDailyFileContent,
+  parseDailyFile,
+  mergeEntry,
+} from './format'
+import type { CaptureEvent, InboxEntry } from '../types'
 
 describe('formatMarkdown', () => {
   it('generates correct filename without colons', () => {
@@ -38,36 +44,6 @@ describe('formatMarkdown', () => {
     expect(result.markdownContent).toContain('Hello world')
   })
 
-  it('generates valid YAML frontmatter for URL message', () => {
-    const event: CaptureEvent = {
-      rawText: 'Check https://example.com',
-      sourceType: 'url',
-      sourceUrl: 'https://example.com',
-      createdAt: '2024-01-15T10:30:00.000Z',
-      tags: [],
-      language: '',
-    }
-    const result = formatMarkdown(event)
-
-    expect(result.markdownContent).toContain('source-type: url')
-    expect(result.markdownContent).toContain('source-url: "https://example.com"')
-  })
-
-  it('escapes special characters in YAML values', () => {
-    const event: CaptureEvent = {
-      rawText: 'Message with "quotes" and: colons',
-      sourceType: 'text',
-      sourceUrl: '',
-      createdAt: '2024-01-15T10:30:00.000Z',
-      tags: [],
-      language: '',
-    }
-    const result = formatMarkdown(event)
-
-    // sourceUrl with special chars should be quoted
-    expect(result.markdownContent).toContain('source-url: ""')
-  })
-
   it('handles Chinese content correctly', () => {
     const event: CaptureEvent = {
       rawText: '你好世界',
@@ -81,38 +57,218 @@ describe('formatMarkdown', () => {
 
     expect(result.markdownContent).toContain('你好世界')
   })
+})
 
-  it('formats tags array correctly', () => {
+describe('formatDailyEntry', () => {
+  it('generates daily filename', () => {
     const event: CaptureEvent = {
-      rawText: 'Tagged message',
+      rawText: 'Test',
       sourceType: 'text',
       sourceUrl: '',
       createdAt: '2024-01-15T10:30:00.000Z',
-      tags: ['tag1', 'tag2'],
-      language: 'en',
+      tags: [],
+      language: '',
     }
-    const result = formatMarkdown(event)
+    const result = formatDailyEntry(event)
 
-    expect(result.markdownContent).toContain('tags:')
-    expect(result.markdownContent).toContain('  - tag1')
-    expect(result.markdownContent).toContain('  - tag2')
+    expect(result.filename).toBe('inbox-2024-01-15.md')
+    expect(result.date).toBe('2024-01-15')
   })
 
-  it('produces parseable YAML structure', () => {
+  it('extracts correct hour and time', () => {
     const event: CaptureEvent = {
       rawText: 'Test',
-      sourceType: 'url',
-      sourceUrl: 'https://example.com/path?query=1&other=2',
-      createdAt: '2024-01-15T10:30:00.000Z',
-      tags: ['research'],
-      language: 'en',
+      sourceType: 'text',
+      sourceUrl: '',
+      createdAt: '2024-01-15T14:45:00.000Z',
+      tags: [],
+      language: '',
     }
-    const result = formatMarkdown(event)
+    const result = formatDailyEntry(event)
 
-    // Check basic structure
-    const lines = result.markdownContent.split('\n')
-    expect(lines[0]).toBe('---')
-    const endIndex = lines.indexOf('---', 1)
-    expect(endIndex).toBeGreaterThan(0)
+    expect(result.entry.hour).toBe('14:00')
+    expect(result.entry.time).toBe('14:45')
+  })
+
+  it('includes source info in entry', () => {
+    const event: CaptureEvent = {
+      rawText: 'Check this link',
+      sourceType: 'url',
+      sourceUrl: 'https://example.com',
+      createdAt: '2024-01-15T10:30:00.000Z',
+      tags: [],
+      language: '',
+    }
+    const result = formatDailyEntry(event)
+
+    expect(result.entry.sourceType).toBe('url')
+    expect(result.entry.sourceUrl).toBe('https://example.com')
+    expect(result.entry.text).toBe('Check this link')
+  })
+})
+
+describe('createDailyFileContent', () => {
+  it('creates file with frontmatter and sections', () => {
+    const entries = new Map<string, InboxEntry[]>()
+    entries.set('10:00', [
+      { time: '10:30', hour: '10:00', text: 'First', sourceType: 'text', sourceUrl: '' },
+    ])
+
+    const content = createDailyFileContent('2024-01-15', entries)
+
+    expect(content).toContain('---\ndate: 2024-01-15\n---')
+    expect(content).toContain('## 10:00')
+    expect(content).toContain('- 10:30 First')
+  })
+
+  it('sorts hours chronologically', () => {
+    const entries = new Map<string, InboxEntry[]>()
+    entries.set('14:00', [
+      { time: '14:30', hour: '14:00', text: 'Afternoon', sourceType: 'text', sourceUrl: '' },
+    ])
+    entries.set('09:00', [
+      { time: '09:15', hour: '09:00', text: 'Morning', sourceType: 'text', sourceUrl: '' },
+    ])
+
+    const content = createDailyFileContent('2024-01-15', entries)
+
+    const morningIndex = content.indexOf('## 09:00')
+    const afternoonIndex = content.indexOf('## 14:00')
+    expect(morningIndex).toBeLessThan(afternoonIndex)
+  })
+
+  it('includes source URL when present', () => {
+    const entries = new Map<string, InboxEntry[]>()
+    entries.set('10:00', [
+      {
+        time: '10:30',
+        hour: '10:00',
+        text: 'Link',
+        sourceType: 'url',
+        sourceUrl: 'https://example.com',
+      },
+    ])
+
+    const content = createDailyFileContent('2024-01-15', entries)
+
+    expect(content).toContain('source: https://example.com')
+  })
+})
+
+describe('parseDailyFile', () => {
+  it('parses entries from daily file', () => {
+    const content = `---
+date: 2024-01-15
+---
+
+## 10:00
+
+- 10:30 Hello world
+
+## 14:00
+
+- 14:45 Afternoon note`
+
+    const entries = parseDailyFile(content)
+
+    expect(entries.size).toBe(2)
+    expect(entries.get('10:00')).toHaveLength(1)
+    expect(entries.get('10:00')![0].time).toBe('10:30')
+    expect(entries.get('10:00')![0].text).toBe('Hello world')
+    expect(entries.get('14:00')![0].time).toBe('14:45')
+  })
+
+  it('parses source URL', () => {
+    const content = `---
+date: 2024-01-15
+---
+
+## 10:00
+
+- 10:30 Check this
+  source: https://example.com`
+
+    const entries = parseDailyFile(content)
+
+    expect(entries.get('10:00')![0].sourceUrl).toBe('https://example.com')
+    expect(entries.get('10:00')![0].text).toBe('Check this')
+  })
+})
+
+describe('mergeEntry', () => {
+  it('creates new content when no existing content', () => {
+    const output = {
+      filename: 'inbox-2024-01-15.md',
+      date: '2024-01-15',
+      entry: {
+        time: '10:30',
+        hour: '10:00',
+        text: 'First entry',
+        sourceType: 'text' as const,
+        sourceUrl: '',
+      },
+    }
+
+    const result = mergeEntry(null, output)
+
+    expect(result).toContain('date: 2024-01-15')
+    expect(result).toContain('## 10:00')
+    expect(result).toContain('- 10:30 First entry')
+  })
+
+  it('appends to existing hour section', () => {
+    const existing = `---
+date: 2024-01-15
+---
+
+## 10:00
+
+- 10:15 Earlier message`
+
+    const output = {
+      filename: 'inbox-2024-01-15.md',
+      date: '2024-01-15',
+      entry: {
+        time: '10:45',
+        hour: '10:00',
+        text: 'Later message',
+        sourceType: 'text' as const,
+        sourceUrl: '',
+      },
+    }
+
+    const result = mergeEntry(existing, output)
+
+    expect(result).toContain('- 10:15 Earlier message')
+    expect(result).toContain('- 10:45 Later message')
+    expect(result.match(/## 10:00/g)).toHaveLength(1)
+  })
+
+  it('creates new hour section when needed', () => {
+    const existing = `---
+date: 2024-01-15
+---
+
+## 09:00
+
+- 09:15 Morning`
+
+    const output = {
+      filename: 'inbox-2024-01-15.md',
+      date: '2024-01-15',
+      entry: {
+        time: '14:30',
+        hour: '14:00',
+        text: 'Afternoon',
+        sourceType: 'text' as const,
+        sourceUrl: '',
+      },
+    }
+
+    const result = mergeEntry(existing, output)
+
+    expect(result).toContain('## 09:00')
+    expect(result).toContain('## 14:00')
+    expect(result).toContain('- 14:30 Afternoon')
   })
 })

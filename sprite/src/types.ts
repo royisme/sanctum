@@ -1,13 +1,5 @@
-export interface Env {
-  TELEGRAM_BOT_TOKEN: string
-  TELEGRAM_WEBHOOK_SECRET_TOKEN?: string
-  GITHUB_TOKEN: string
-  REPO_OWNER: string
-  REPO_NAME: string
-}
-
 export type HonoEnv = {
- Bindings: Env
+  Bindings: Env
 }
 
 export interface CaptureEvent {
@@ -22,4 +14,18 @@ export interface CaptureEvent {
 export interface MarkdownOutput {
   filename: string
   markdownContent: string
+}
+
+export interface InboxEntry {
+  time: string
+  hour: string
+  text: string
+  sourceType: 'url' | 'text'
+  sourceUrl: string
+}
+
+export interface DailyFileOutput {
+  filename: string
+  date: string
+  entry: InboxEntry
 }

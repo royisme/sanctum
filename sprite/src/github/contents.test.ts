@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { writeToGitHub, encodeBase64 } from './contents'
-import type { MarkdownOutput } from '../types'
+import { writeDailyFile, encodeBase64, decodeBase64 } from './contents'
+import type { DailyFileOutput } from '../types'
 
 describe('encodeBase64', () => {
   it('encodes ASCII string correctly', () => {
@@ -10,7 +10,6 @@ describe('encodeBase64', () => {
 
   it('encodes UTF-8 string with Chinese characters', () => {
     const result = encodeBase64('你好世界')
-    // Verify it decodes back correctly
     const decoded = new TextDecoder().decode(
       Uint8Array.from(atob(result), (c) => c.charCodeAt(0))
     )
@@ -26,97 +25,116 @@ describe('encodeBase64', () => {
   })
 })
 
-describe('writeToGitHub', () => {
-  const mockEnv = {
+describe('decodeBase64', () => {
+  it('decodes ASCII string correctly', () => {
+    const encoded = btoa('Hello World')
+    expect(decodeBase64(encoded)).toBe('Hello World')
+  })
+
+  it('roundtrips UTF-8 correctly', () => {
+    const original = '你好世界'
+    const encoded = encodeBase64(original)
+    expect(decodeBase64(encoded)).toBe(original)
+  })
+})
+
+describe('writeDailyFile', () => {
+  const mockEnv: Env = {
+    TELEGRAM_BOT_TOKEN: 'test-bot-token',
     GITHUB_TOKEN: 'test-token',
     REPO_OWNER: 'testowner',
     REPO_NAME: 'testrepo',
   }
 
-  const mockOutput: MarkdownOutput = {
-    filename: 'inbox-2024-01-15T10-30-00.000Z.md',
-    markdownContent: '---\nsource-type: text\n---\n\nHello',
+  const mockOutput: DailyFileOutput = {
+    filename: 'inbox-2024-01-15.md',
+    date: '2024-01-15',
+    entry: {
+      time: '10:30',
+      hour: '10:00',
+      text: 'Hello',
+      sourceType: 'text',
+      sourceUrl: '',
+    },
   }
 
+  let mockFetch: ReturnType<typeof vi.fn>
+
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn())
+    mockFetch = vi.fn()
+    vi.stubGlobal('fetch', mockFetch)
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('calls GitHub API with correct parameters', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 201,
-    })
-    vi.stubGlobal('fetch', mockFetch)
-
-    await writeToGitHub(mockOutput, { env: mockEnv })
-
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-    const [url, options] = mockFetch.mock.calls[0]
-
-    expect(url).toBe(
-      'https://api.github.com/repos/testowner/testrepo/contents/00_Inbox/inbox-2024-01-15T10-30-00.000Z.md'
-    )
-    expect(options.method).toBe('PUT')
-    expect(options.headers.Authorization).toBe('Bearer test-token')
-
-    const body = JSON.parse(options.body)
-    expect(body.message).toBe('sprite: capture inbox item')
-    expect(body.content).toBeTruthy()
-  })
-
-  it('retries with suffix on 409 conflict', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 409, text: () => 'conflict' })
+  it('creates new file when file does not exist', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 404 })
       .mockResolvedValueOnce({ ok: true, status: 201 })
-    vi.stubGlobal('fetch', mockFetch)
 
-    await writeToGitHub(mockOutput, { env: mockEnv })
+    await writeDailyFile(mockOutput, { env: mockEnv })
 
     expect(mockFetch).toHaveBeenCalledTimes(2)
-    const secondUrl = mockFetch.mock.calls[1][0]
-    expect(secondUrl).toContain('00_Inbox/inbox-2024-01-15T10-30-00.000Z-')
-    expect(secondUrl).toContain('.md')
+
+    const [getUrl] = mockFetch.mock.calls[0]
+    expect(getUrl).toContain('00_Inbox/inbox-2024-01-15.md')
+
+    const [putUrl, putOptions] = mockFetch.mock.calls[1]
+    expect(putUrl).toContain('00_Inbox/inbox-2024-01-15.md')
+    expect(putOptions.method).toBe('PUT')
+
+    const body = JSON.parse(putOptions.body)
+    expect(body.sha).toBeUndefined()
   })
 
-  it('retries with suffix on 422 error', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 422, text: () => 'unprocessable' })
-      .mockResolvedValueOnce({ ok: true, status: 201 })
-    vi.stubGlobal('fetch', mockFetch)
+  it('updates existing file with SHA', async () => {
+    const existingContent = encodeBase64('---\ndate: 2024-01-15\n---\n\n## 09:00\n\n- 09:15 Earlier message')
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ content: existingContent, sha: 'abc123' }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 200 })
 
-    await writeToGitHub(mockOutput, { env: mockEnv })
+    await writeDailyFile(mockOutput, { env: mockEnv })
 
     expect(mockFetch).toHaveBeenCalledTimes(2)
+
+    const [, putOptions] = mockFetch.mock.calls[1]
+    const body = JSON.parse(putOptions.body)
+    expect(body.sha).toBe('abc123')
+
+    const decodedContent = decodeBase64(body.content)
+    expect(decodedContent).toContain('## 09:00')
+    expect(decodedContent).toContain('## 10:00')
+    expect(decodedContent).toContain('10:30 Hello')
   })
 
-  it('throws error when retry also fails', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false, status: 409, text: () => 'conflict' })
-      .mockResolvedValueOnce({ ok: false, status: 500, text: () => 'server error' })
-    vi.stubGlobal('fetch', mockFetch)
-
-    await expect(writeToGitHub(mockOutput, { env: mockEnv })).rejects.toThrow(
-      'GitHub write failed: 500'
-    )
-  })
-
-  it('throws error on non-conflict failure', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
+  it('throws error on GET failure', async () => {
+    mockFetch.mockResolvedValueOnce({
       ok: false,
-      status: 403,
-      text: () => 'forbidden',
+      status: 500,
+      text: () => Promise.resolve('server error'),
     })
-    vi.stubGlobal('fetch', mockFetch)
 
-    await expect(writeToGitHub(mockOutput, { env: mockEnv })).rejects.toThrow(
+    await expect(writeDailyFile(mockOutput, { env: mockEnv })).rejects.toThrow(
+      'GitHub read failed: 500'
+    )
+  })
+
+  it('throws error on PUT failure', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 404 })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        text: () => Promise.resolve('forbidden'),
+      })
+
+    await expect(writeDailyFile(mockOutput, { env: mockEnv })).rejects.toThrow(
       'GitHub write failed: 403'
     )
   })

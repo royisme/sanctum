@@ -1,5 +1,4 @@
 import { webhookCallback, type Context, type Bot } from 'grammy'
-import type { HonoEnv, Env } from '../types'
 import { createBot } from '../telegram/bot'
 
 type HonoWebhookHandler = ReturnType<typeof webhookCallback<Context, 'hono'>>

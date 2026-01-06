@@ -1,4 +1,5 @@
-import type { MarkdownOutput } from '../types'
+import type { DailyFileOutput } from '../types'
+import { mergeEntry } from '../markdown/format'
 
 export function encodeBase64(str: string): string {
   const encoder = new TextEncoder()
@@ -10,23 +11,79 @@ export function encodeBase64(str: string): string {
   return btoa(binary)
 }
 
+export function decodeBase64(base64: string): string {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new TextDecoder().decode(bytes)
+}
+
 export interface GitHubWriteOptions {
-  env: {
-    GITHUB_TOKEN: string
-    REPO_OWNER: string
-    REPO_NAME: string
+  env: Env
+}
+
+interface GitHubFileResponse {
+  content: string
+  sha: string
+}
+
+async function getExistingFile(
+  path: string,
+  env: Env
+): Promise<{ content: string; sha: string } | null> {
+  const { GITHUB_TOKEN, REPO_OWNER, REPO_NAME } = env
+
+  const response = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'sprite-bot',
+      },
+    }
+  )
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('GitHub GET failed:', response.status, errorText)
+    throw new Error(`GitHub read failed: ${response.status}`)
+  }
+
+  const data = (await response.json()) as GitHubFileResponse
+  return {
+    content: decodeBase64(data.content),
+    sha: data.sha,
   }
 }
 
-export async function writeToGitHub(
-  output: MarkdownOutput,
+export async function writeDailyFile(
+  output: DailyFileOutput,
   options: GitHubWriteOptions
 ): Promise<void> {
   const { GITHUB_TOKEN, REPO_OWNER, REPO_NAME } = options.env
   const path = `00_Inbox/${output.filename}`
-  const content = encodeBase64(output.markdownContent)
 
-  // First attempt
+  const existing = await getExistingFile(path, options.env)
+  const mergedContent = mergeEntry(existing?.content ?? null, output)
+  const encodedContent = encodeBase64(mergedContent)
+
+  const body: Record<string, string> = {
+    message: 'sprite: capture inbox item',
+    content: encodedContent,
+  }
+
+  if (existing) {
+    body.sha = existing.sha
+  }
+
   const response = await fetch(
     `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
     {
@@ -37,43 +94,9 @@ export async function writeToGitHub(
         'Content-Type': 'application/json',
         'User-Agent': 'sprite-bot',
       },
-      body: JSON.stringify({
-        message: 'sprite: capture inbox item',
-        content,
-      }),
+      body: JSON.stringify(body),
     }
   )
-
-  // Handle conflict with retry
-  if (response.status === 409 || response.status === 422) {
-    const suffix = Date.now().toString(36) + Math.random().toString(36).substring(2, 5)
-    const retryFilename = output.filename.replace('.md', `-${suffix}.md`)
-    const retryPath = `00_Inbox/${retryFilename}`
-
-    const retryResponse = await fetch(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${retryPath}`,
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${GITHUB_TOKEN}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'User-Agent': 'sprite-bot',
-        },
-        body: JSON.stringify({
-          message: 'sprite: capture inbox item',
-          content: encodeBase64(output.markdownContent),
-        }),
-      }
-    )
-
-    if (!retryResponse.ok) {
-      const errorText = await retryResponse.text()
-      console.error('GitHub retry failed:', retryResponse.status, errorText)
-      throw new Error(`GitHub write failed: ${retryResponse.status}`)
-    }
-    return
-  }
 
   if (!response.ok) {
     const errorText = await response.text()
