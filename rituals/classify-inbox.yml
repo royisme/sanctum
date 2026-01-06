@@ -1,0 +1,41 @@
+name: Classify Inbox
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install crucible
+        run: uv pip install "crucible @ git+https://github.com/${{ vars.SANCTUM_REPO }}.git#subdirectory=crucible"
+
+      - name: Run classifier
+        env:
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          VAULT_PATH: ${{ github.workspace }}
+        run: uv run python -m crucible.llm.classify_inbox
+
+      - name: Commit changes
+        run: |
+          git status --porcelain
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "chore: classify inbox"
+            git push
+          else
+            echo "No changes"
+          fi

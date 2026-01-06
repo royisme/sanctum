@@ -1,0 +1,18 @@
+
+
+# Ignore dependencies
+node_modules/
+package-lock.json
+
+# Ignore build/dist
+dist/
+build/
+
+# Ignore hidden folders
+.obsidian/
+.trash/
+.tmp/
+.backup/
+
+# Ignore git
+.git/
