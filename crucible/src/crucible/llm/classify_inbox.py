@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 DEFAULT_MOC_NAME = "Index.md"
 FAILED_DIR_NAME = "_failed"
@@ -36,6 +37,26 @@ def get_output_dirs() -> dict[str, Path]:
 
 def get_failed_dir() -> Path:
     return get_inbox_dir() / FAILED_DIR_NAME
+
+
+def move_to_failed(source_path: Path, failed_dir: Path) -> None:
+    failed_dir.mkdir(parents=True, exist_ok=True)
+
+    if source_path.parent == failed_dir:
+        return
+
+    target_path = failed_dir / source_path.name
+    if target_path.exists():
+        suffix = f"{int(source_path.stat().st_mtime)}"
+        target_path = failed_dir / f"{source_path.stem}-{suffix}{source_path.suffix}"
+
+    source_path.rename(target_path)
+
+
+def move_all_to_failed(items: List["InboxItem"], failed_dir: Path) -> None:
+    for item in items:
+        if item.path.exists():
+            move_to_failed(item.path, failed_dir)
 
 
 @dataclass
@@ -80,13 +101,8 @@ def build_prompt(items: List[InboxItem]) -> str:
 
 
 def call_llm(prompt: str) -> Dict:
-    provider = os.environ.get("LLM_PROVIDER", "claude").lower()
-    if provider == "claude":
-        from .providers.claude import call_llm as provider_call
-    elif provider == "openai":
-        from .providers.openai import call_llm as provider_call
-    else:
-        raise ValueError("Unsupported LLM_PROVIDER")
+    from .providers.anthropic_provider import call_llm as provider_call
+
     return provider_call(prompt)
 
 
@@ -151,7 +167,15 @@ def main() -> None:
         return
 
     prompt = build_prompt(items)
-    result = call_llm(prompt)
+
+    try:
+        result = call_llm(prompt)
+    except Exception as exc:
+        failed_dir = get_failed_dir()
+        move_all_to_failed(items, failed_dir)
+        print(f"Classification failed: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
+
     apply_classification(items, result)
 
 

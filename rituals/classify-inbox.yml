@@ -8,30 +8,42 @@ on:
 jobs:
   classify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
       - name: Install crucible
-        run: uv pip install "crucible @ git+https://github.com/${{ vars.SANCTUM_REPO }}.git#subdirectory=crucible"
+        run: uv pip install "crucible @ git+https://github.com/${{ vars.SANCTUM_REPO }}.git@${{ vars.SANCTUM_SHA }}#subdirectory=crucible"
+
+      - name: Initialize Vault
+        env:
+          VAULT_PATH: ${{ github.workspace }}
+        run: uv run python -m crucible.init_vault
 
       - name: Run classifier
         env:
-          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL }}
-          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_MODEL: ${{ secrets.ANTHROPIC_MODEL }}
           VAULT_PATH: ${{ github.workspace }}
         run: uv run python -m crucible.llm.classify_inbox
 
       - name: Commit changes
         run: |
-          git status --porcelain
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           if [ -n "$(git status --porcelain)" ]; then
             git add .
             git commit -m "chore: classify inbox"

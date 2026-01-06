@@ -29,5 +29,13 @@ pnpm-lock.yaml
 # Temporary directories
 .tmp/
 
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+uv.lock
+
 # Never commit real API keys
 *_API_KEY

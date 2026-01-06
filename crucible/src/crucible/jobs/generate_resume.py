@@ -9,11 +9,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 
-from ..llm.classify_inbox import call_llm, get_vault_path
+import importlib.resources
+
+from ..llm.classify_inbox import get_vault_path
 
 
-def get_templates_dir() -> Path:
-    return Path(__file__).parent.parent.parent / "Templates"
+def read_template(name: str) -> str:
+    return (
+        importlib.resources.files("crucible.templates").joinpath(name).read_text(encoding="utf-8")
+    )
 
 
 def get_output_dir() -> Path:
@@ -29,9 +33,8 @@ class JobInput:
 
 
 def read_job_input(job_path: Path) -> JobInput:
-    templates_dir = get_templates_dir()
-    resume_template = (templates_dir / "resume-template.md").read_text(encoding="utf-8")
-    cover_template = (templates_dir / "cover-letter-template.md").read_text(encoding="utf-8")
+    resume_template = read_template("resume-template.md")
+    cover_template = read_template("cover-letter-template.md")
     job_content = job_path.read_text(encoding="utf-8")
     return JobInput(
         job_path=job_path,
@@ -58,13 +61,8 @@ def build_job_prompt(job_input: JobInput) -> str:
 
 
 def call_llm_job(prompt: str) -> Dict:
-    provider = os.environ.get("LLM_PROVIDER", "claude").lower()
-    if provider == "claude":
-        from ..llm.providers.claude import call_llm as provider_call
-    elif provider == "openai":
-        from ..llm.providers.openai import call_llm as provider_call
-    else:
-        raise ValueError("Unsupported LLM_PROVIDER")
+    from ..llm.providers.anthropic_provider import call_llm as provider_call
+
     return provider_call(prompt)
 
 
