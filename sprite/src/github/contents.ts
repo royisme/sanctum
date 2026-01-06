@@ -35,6 +35,7 @@ export async function writeToGitHub(
         Authorization: `Bearer ${GITHUB_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
+        'User-Agent': 'sprite-bot',
       },
       body: JSON.stringify({
         message: 'sprite: capture inbox item',
@@ -57,6 +58,7 @@ export async function writeToGitHub(
           Authorization: `Bearer ${GITHUB_TOKEN}`,
           Accept: 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
+          'User-Agent': 'sprite-bot',
         },
         body: JSON.stringify({
           message: 'sprite: capture inbox item',

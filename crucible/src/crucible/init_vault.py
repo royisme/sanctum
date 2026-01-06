@@ -9,8 +9,8 @@ REQUIRED_DIRS = [
     "00_Inbox/_failed",
     "01_Projects",
     "02_Areas",
-    "02_Jobs",
-    "02_Jobs/Generated",
+    "03_Resources/01_Jobs",
+    "03_Resources/01_JobsGenerated",
     "03_Resources",
     "04_Archive",
 ]
