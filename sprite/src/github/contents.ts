@@ -1,6 +1,6 @@
 import type { MarkdownOutput } from '../types'
 
-function encodeBase64(str: string): string {
+export function encodeBase64(str: string): string {
   const encoder = new TextEncoder()
   const bytes = encoder.encode(str)
   let binary = ''

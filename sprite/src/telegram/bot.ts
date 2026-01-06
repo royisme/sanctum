@@ -17,14 +17,23 @@ export function createBot(env: Env): BotInstance {
     const captureEvent = await createCapture(ctx)
 
     if (!captureEvent) {
+      await ctx.reply('Skipped: not a text message')
       return
     }
 
     const markdownOutput = formatMarkdown(captureEvent)
 
-    await writeToGitHub(markdownOutput, {
-      env,
-    })
+    try {
+      await writeToGitHub(markdownOutput, { env })
+      const preview = captureEvent.rawText.substring(0, 50)
+      const suffix = captureEvent.rawText.length > 50 ? '...' : ''
+      await ctx.reply(`Saved to inbox: ${markdownOutput.filename}\n"${preview}${suffix}"`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      console.error('Capture failed:', message)
+      await ctx.reply(`Failed to save: ${message}`)
+      throw err
+    }
   }
 
   // Register handlers

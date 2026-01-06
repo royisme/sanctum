@@ -348,8 +348,8 @@ REQUIRED_DIRS = [
     "00_Inbox/_failed",
     "01_Projects",
     "02_Areas",
-    "02_Jobs",
-    "02_Jobs/Generated",
+    "03_Resources/01_Jobs",
+    "03_Resources/01_JobsGenerated",
     "03_Resources",
     "04_Archive",
 ]
@@ -367,8 +367,8 @@ REQUIRED_DIRS = [
 | `GITHUB_TOKEN` | Sprite | GitHub PAT for API writes |
 | `REPO_OWNER` | Sprite | Target vault owner |
 | `REPO_NAME` | Sprite | Target vault repo name |
-| `ANTHROPIC_API_KEY` | Crucible | Customize Anthropic API key (SDK auto-reads) |
-| `ANTHROPIC_BASE_URL` | Crucible |Customize Anthropic URL  (SDK auto-reads) |
+| `ANTHROPIC_API_KEY` | Crucible | Customize Anthropic API key ) |
+| `ANTHROPIC_BASE_URL` | Crucible |Customize Anthropic URL | 
 | `VAULT_PATH` | Crucible | Path to cloned vault |
 | `JOB_PATH` | Crucible | Path to job description file |
 

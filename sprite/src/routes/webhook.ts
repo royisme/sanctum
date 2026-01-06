@@ -1,14 +1,16 @@
-import { webhookCallback } from 'grammy'
+import { webhookCallback, type Context, type Bot } from 'grammy'
 import type { HonoEnv, Env } from '../types'
 import { createBot } from '../telegram/bot'
 
+type HonoWebhookHandler = ReturnType<typeof webhookCallback<Context, 'hono'>>
+
 export interface WebhookRoute {
   verifyToken: (tokenParam: string) => boolean
-  callback: (token: string) => ReturnType<typeof webhookCallback>
+  callback: (token: string) => HonoWebhookHandler
 }
 
 export function createWebhookRoute(env: Env): WebhookRoute {
-  const botCache = new Map<string, ReturnType<typeof webhookCallback>>()
+  const botCache = new Map<string, HonoWebhookHandler>()
 
   const verifyToken = (tokenParam: string): boolean => {
     return tokenParam === env.TELEGRAM_BOT_TOKEN
