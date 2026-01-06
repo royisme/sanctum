@@ -2,11 +2,5 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "sprite",
   "compatibility_date": "2025-08-03",
-  "main": "./src/index.ts",
-  "vars": {
-    "TELEGRAM_BOT_TOKEN": "",
-    "GITHUB_TOKEN": "",
-    "REPO_OWNER": "",
-    "REPO_NAME": ""
-  }
+  "main": "./src/index.ts"
 }
