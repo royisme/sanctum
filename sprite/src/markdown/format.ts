@@ -90,11 +90,13 @@ export function parseDailyFile(content: string): Map<string, InboxEntry[]> {
     const hour = sections[i]
     const sectionContent = sections[i + 1] || ''
 
-    const entryRegex = /^- (\d{2}:\d{2}) ([\s\S]*?)(?=\n- \d{2}:\d{2} |\n## |\n*$)/gm
+    const entryBlocks = sectionContent.split(/\n\n(?=- \d{2}:\d{2} )/)
     const hourEntries: InboxEntry[] = []
 
-    let match
-    while ((match = entryRegex.exec(sectionContent)) !== null) {
+    for (const block of entryBlocks) {
+      const match = block.match(/^- (\d{2}:\d{2}) ([\s\S]*)$/)
+      if (!match) continue
+
       const time = match[1]
       let text = match[2].trim()
       let sourceUrl = ''
