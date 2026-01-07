@@ -1,0 +1,14 @@
+{
+  "id": "sanctum-crucible",
+  "name": "Sanctum Crucible",
+  "version": "2.0.0",
+  "description": "Knowledge alchemy tools for Sanctum vault: resume generation, vault initialization, and more",
+  "author": {
+    "name": "Roy Zhu",
+    "email": ""
+  },
+  "repository": "https://github.com/royzhu/gatherer",
+  "license": "MIT",
+  "keywords": ["sanctum", "vault", "para", "resume", "obsidian"],
+  "commands": "commands"
+}

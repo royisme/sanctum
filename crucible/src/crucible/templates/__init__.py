@@ -1,1 +1,0 @@
-"""Bundled templates for Crucible."""
