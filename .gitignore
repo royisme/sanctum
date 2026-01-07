@@ -39,3 +39,4 @@ uv.lock
 
 # Never commit real API keys
 *_API_KEY
+.works

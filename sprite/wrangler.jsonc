@@ -6,6 +6,20 @@
   "vars": {
     "REPO_OWNER": "royisme",
     "REPO_NAME": "myObsidian",
+    "AI_GATEWAY_ID": "sanctum-classifier",
+  },
+  "kv_namespaces": [
+    {
+      "binding": "INBOX_QUEUE",
+      "id": "a5215b15224b4503941b90eaf76aa222",
+      "preview_id": "6dbeecb6278a4310896ccc78b57a5660",
+    },
+  ],
+  "ai": {
+    "binding": "AI",
+  },
+  "triggers": {
+    "crons": ["*/15 * * * *"],
   },
   "observability": {
     "logs": {

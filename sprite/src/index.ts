@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { webhookCallback } from 'grammy'
 import type { HonoEnv } from './types'
 import { createBot } from './telegram/bot'
+import processor from './processor'
 
 const app = new Hono<HonoEnv>()
 
@@ -10,11 +11,9 @@ app.onError((err, c) => {
   return c.json({ ok: false, error: 'Internal error' }, 500)
 })
 
-// Webhook endpoint with token validation
 app.post('/:token', async (c) => {
   const tokenParam = c.req.param('token')
 
-  // Validate bot token
   if (tokenParam !== c.env.TELEGRAM_BOT_TOKEN) {
     console.warn('Token mismatch:', tokenParam.substring(0, 8) + '...')
     return c.json({ ok: false, error: 'Unauthorized' }, 401)
@@ -30,9 +29,11 @@ app.post('/:token', async (c) => {
   }
 })
 
-// Health check endpoint
 app.get('/health', (c) => {
   return c.json({ status: 'ok' }, 200)
 })
 
-export default app
+export default {
+  fetch: app.fetch,
+  scheduled: processor.scheduled,
+}
