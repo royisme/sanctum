@@ -14,37 +14,35 @@ export async function chatCompletion(
   options: CompletionOptions = {},
 ): Promise<string> {
   const model = options.model || env.AI_MODEL || 'dynamic/sanctum-classifier'
+  const url = `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/compat/chat/completions`
 
-  try {
-    const response = await env.AI.gateway(env.AI_GATEWAY_ID).run({
-      provider: 'compat',
-      endpoint: 'chat/completions',
-      headers: {
-        Authorization: `Bearer ${env.AI_API_KEY}`,
-      },
-      query: {
-        model,
-        messages,
-        ...(options.response_format && {
-          response_format: options.response_format,
-        }),
-      },
-    })
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${env.AI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      ...(options.response_format && { response_format: options.response_format }),
+    }),
+  })
 
-    // Response is the raw API response object
-    const data = response as {
-      choices?: Array<{ message?: { content?: string } }>
-    }
-
-    const content = data.choices?.[0]?.message?.content
-
-    if (!content) {
-      throw new Error('Empty response from AI provider')
-    }
-
-    return content
-  } catch (error) {
-    console.error('LLM Request failed:', error)
-    throw error
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`AI Gateway error (${response.status}): ${errorText}`)
   }
+
+  const data = await response.json() as {
+    choices?: Array<{ message?: { content?: string } }>
+  }
+
+  const content = data.choices?.[0]?.message?.content
+
+  if (!content) {
+    throw new Error('Empty response from AI provider')
+  }
+
+  return content
 }

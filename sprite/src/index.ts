@@ -11,22 +11,19 @@ app.onError((err, c) => {
   return c.json({ ok: false, error: 'Internal error' }, 500)
 })
 
-// Manual trigger for queue processing
 app.post('/process-now', async (c) => {
   const authHeader = c.req.header('X-Admin-Secret')
 
-  // Use TELEGRAM_BOT_TOKEN as the secret for simplicity
   if (!authHeader || authHeader !== c.env.TELEGRAM_BOT_TOKEN) {
     return c.json({ ok: false, error: 'Unauthorized' }, 401)
   }
 
   try {
-    console.log('Manually triggering queue processing...')
     await processQueue(c.env, c.executionCtx)
     return c.json({ ok: true, message: 'Queue processing triggered' })
   } catch (err) {
     console.error('Manual processing failed:', err)
-    return c.json({ ok: false, error: 'Processing failed' }, 500)
+    return c.json({ ok: false, error: String(err), stack: (err as Error).stack }, 500)
   }
 })
 

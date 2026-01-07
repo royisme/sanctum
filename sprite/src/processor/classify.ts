@@ -28,10 +28,6 @@ export async function classifyWithWorkersAI(
     env,
     [
       {
-        role: 'system',
-        content: 'You are a PARA classifier. Return JSON only.',
-      },
-      {
         role: 'user',
         content: prompt,
       },

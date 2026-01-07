@@ -85,6 +85,16 @@ export async function writeClassifiedToGitHub(
   }
 }
 
+function toBase64(str: string): string {
+  const encoder = new TextEncoder()
+  const bytes = encoder.encode(str)
+  let binary = ''
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte)
+  }
+  return btoa(binary)
+}
+
 async function writeSingleFile(
   file: GitHubFileContent,
   env: Env,
@@ -100,7 +110,7 @@ async function writeSingleFile(
     },
     body: JSON.stringify({
       message: file.message,
-      content: btoa(file.content),
+      content: toBase64(file.content),
     }),
   })
 

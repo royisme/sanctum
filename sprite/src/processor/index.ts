@@ -23,7 +23,15 @@ export async function processQueue(
   env: Env,
   ctx?: ExecutionContext,
 ): Promise<void> {
-  const messages = await readQueue(env)
+  console.log('Starting processQueue...')
+  
+  let messages
+  try {
+    messages = await readQueue(env)
+  } catch (err) {
+    console.error('readQueue failed:', err)
+    throw err
+  }
 
   if (messages.length === 0) {
     console.log('Queue empty, nothing to process')
