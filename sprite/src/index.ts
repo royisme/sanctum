@@ -2,13 +2,32 @@ import { Hono } from 'hono'
 import { webhookCallback } from 'grammy'
 import type { HonoEnv } from './types'
 import { createBot } from './telegram/bot'
-import processor from './processor'
+import processor, { processQueue } from './processor'
 
 const app = new Hono<HonoEnv>()
 
 app.onError((err, c) => {
   console.error('Worker error:', err)
   return c.json({ ok: false, error: 'Internal error' }, 500)
+})
+
+// Manual trigger for queue processing
+app.post('/process-now', async (c) => {
+  const authHeader = c.req.header('X-Admin-Secret')
+
+  // Use TELEGRAM_BOT_TOKEN as the secret for simplicity
+  if (!authHeader || authHeader !== c.env.TELEGRAM_BOT_TOKEN) {
+    return c.json({ ok: false, error: 'Unauthorized' }, 401)
+  }
+
+  try {
+    console.log('Manually triggering queue processing...')
+    await processQueue(c.env, c.executionCtx)
+    return c.json({ ok: true, message: 'Queue processing triggered' })
+  } catch (err) {
+    console.error('Manual processing failed:', err)
+    return c.json({ ok: false, error: 'Processing failed' }, 500)
+  }
 })
 
 app.post('/:token', async (c) => {

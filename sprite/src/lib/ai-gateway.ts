@@ -13,31 +13,29 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: CompletionOptions = {},
 ): Promise<string> {
-  const model = options.model || env.AI_MODEL || 'workers-ai/@cf/meta/llama-3.1-8b-instruct'
-  
-  // Construct AI Gateway Universal Endpoint URL
-  const gatewayUrl = `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.AI_GATEWAY_ID}/compat/chat/completions`
+  const model = options.model || env.AI_MODEL || 'dynamic/sanctum-classifier'
 
   try {
-    const response = await fetch(gatewayUrl, {
-      method: 'POST',
+    const response = await env.AI.gateway(env.AI_GATEWAY_ID).run({
+      provider: 'compat',
+      endpoint: 'chat/completions',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.AI_API_KEY}`,
+        Authorization: `Bearer ${env.AI_API_KEY}`,
       },
-      body: JSON.stringify({
+      query: {
         model,
         messages,
-        response_format: options.response_format,
-      }),
+        ...(options.response_format && {
+          response_format: options.response_format,
+        }),
+      },
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`AI Gateway error (${response.status}): ${errorText}`)
+    // Response is the raw API response object
+    const data = response as {
+      choices?: Array<{ message?: { content?: string } }>
     }
 
-    const data = (await response.json()) as any
     const content = data.choices?.[0]?.message?.content
 
     if (!content) {

@@ -2,35 +2,17 @@
   "name": "sprite",
   "type": "module",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
-    "preview": "$npm_execpath run build && vite preview",
-    "deploy": "$npm_execpath run build && wrangler deploy",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "cf-typegen": "wrangler types",
     "check": "tsc --noEmit",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "deploy": "$npm_execpath run build && wrangler deploy",
+    "dev": "vite",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix && prettier --write .",
-    "precommit": "lint-staged"
-  },
-  "dependencies": {
-    "hono": "^4.11.3",
-    "grammy": "^1.22.0"
-  },
-  "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.17.1",
-    "@cloudflare/workers-types": "^3.14.1",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
-    "oxlint": "^1.38.0",
-    "oxlint-tsgolint": "^0.10.1",
-    "prettier": "^3.7.4",
-    "prettier-plugin-packagejson": "^2.5.20",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.0",
-    "vitest": "^3.2.4",
-    "wrangler": "^4.54.0"
+    "precommit": "lint-staged",
+    "preview": "$npm_execpath run build && vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "lint-staged": {
     ".{ts,js}": "eslint --cache --fix",
@@ -38,5 +20,24 @@
     ".js": "eslint --cache --fix",
     ".{js,css,md}": "prettier --write",
     ".{json,yml}": "prettier --write"
+  },
+  "dependencies": {
+    "grammy": "^1.22.0",
+    "hono": "^4.11.3",
+    "openai": "^6.15.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.17.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "oxlint": "^1.38.0",
+    "oxlint-tsgolint": "^0.10.1",
+    "prettier": "^3.7.4",
+    "prettier-plugin-packagejson": "^2.5.20",
+    "prettier-plugin-sort-json": "^4.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.54.0"
   }
 }

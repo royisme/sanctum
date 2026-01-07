@@ -21,11 +21,18 @@
     "binding": "AI",
   },
   "triggers": {
-    "crons": ["*/15 * * * *"],
+    "crons": ["*/5 * * * *"],
   },
+  "routes": [
+    {
+      "pattern": "sprite-tg.letme.run",
+      "zone_name": "letme.run",
+      "custom_domain": true,
+    },
+  ],
   "observability": {
     "logs": {
-      "enabled": false,
+      "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
     },

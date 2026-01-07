@@ -1,6 +1,8 @@
 # Sprite - Telegram Message Processor
 
-Cloudflare Worker that captures Telegram messages, enriches content via Firecrawl, classifies with Workers AI, and saves directly to GitHub vault PARA folders.
+Cloudflare Worker that captures Telegram messages, enriches content via
+Firecrawl, classifies with Workers AI, and saves directly to GitHub vault PARA
+folders.
 
 ## Architecture
 
@@ -12,7 +14,7 @@ Telegram Message
 Sprite Worker (fetch handler)
   ├─ Bot commands (/start, /help) → OK
   └─ Regular messages → KV Queue → ✓
-  
+
 KV Queue (inbox:*)
   ↓
 Scheduled Worker (cron: every 15 min)
@@ -32,6 +34,7 @@ GitHub API (batch write)
 ```
 
 **Key Features:**
+
 - ✅ Async processing (instant Telegram response)
 - ✅ URL content enrichment (Firecrawl API)
 - ✅ YouTube detection (marked as video type)
@@ -127,16 +130,16 @@ curl -F "url=https://sprite.YOUR_ACCOUNT.workers.dev/YOUR_BOT_TOKEN" \
 
 ## Environment Variables
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `TELEGRAM_BOT_TOKEN` | Secret | Bot token from @BotFather |
-| `GITHUB_TOKEN` | Secret | GitHub PAT with repo scope |
-| `FIRECRAWL_API_KEY` | Secret | Firecrawl API key for URL extraction |
-| `REPO_OWNER` | Config | GitHub vault owner (in wrangler.jsonc) |
-| `REPO_NAME` | Config | GitHub vault repo name (in wrangler.jsonc) |
-| `AI_GATEWAY_ID` | Config | AI Gateway ID (in wrangler.jsonc) |
-| `INBOX_QUEUE` | Binding | KV namespace for message queue |
-| `AI` | Binding | Workers AI binding |
+| Variable             | Type    | Description                                |
+| -------------------- | ------- | ------------------------------------------ |
+| `TELEGRAM_BOT_TOKEN` | Secret  | Bot token from @BotFather                  |
+| `GITHUB_TOKEN`       | Secret  | GitHub PAT with repo scope                 |
+| `FIRECRAWL_API_KEY`  | Secret  | Firecrawl API key for URL extraction       |
+| `REPO_OWNER`         | Config  | GitHub vault owner (in wrangler.jsonc)     |
+| `REPO_NAME`          | Config  | GitHub vault repo name (in wrangler.jsonc) |
+| `AI_GATEWAY_ID`      | Config  | AI Gateway ID (in wrangler.jsonc)          |
+| `INBOX_QUEUE`        | Binding | KV namespace for message queue             |
+| `AI`                 | Binding | Workers AI binding                         |
 
 ## Output Format
 
@@ -169,21 +172,26 @@ bun run dev
 ## Monitoring
 
 View logs:
+
 ```bash
 bunx wrangler tail
 ```
 
 Check queue:
+
 ```bash
 bunx wrangler kv:key list --namespace-id=<YOUR_KV_ID> --prefix=inbox:
 ```
 
 Manually trigger cron:
-- Cloudflare Dashboard > Workers > sprite > Triggers > Cron Triggers > **Run Now**
+
+- Cloudflare Dashboard > Workers > sprite > Triggers > Cron Triggers > **Run
+  Now**
 
 ## Cost Estimate
 
 All within Cloudflare free tier:
+
 - Workers: 100,000 requests/day
 - KV: 100,000 reads/day
 - Workers AI: 10,000 requests/day
@@ -193,15 +201,15 @@ All within Cloudflare free tier:
 
 ## Comparison: v1 vs v2
 
-| Feature | v1 (Old) | v2 (Current) |
-|---------|----------|--------------|
-| Processing | Sync (blocks user) | Async (instant ✓) |
-| Storage | GitHub (direct) | KV Queue → GitHub |
-| Classification | Crucible (Python + GH Actions) | Workers AI (inline) |
-| URL Content | Raw URL only | Full content via Firecrawl |
-| Output | `00_Inbox/*.md` | Direct to PARA folders |
-| Cost | $0 | $0 |
-| Dependencies | Crucible + Actions | Self-contained |
+| Feature        | v1 (Old)                       | v2 (Current)               |
+| -------------- | ------------------------------ | -------------------------- |
+| Processing     | Sync (blocks user)             | Async (instant ✓)          |
+| Storage        | GitHub (direct)                | KV Queue → GitHub          |
+| Classification | Crucible (Python + GH Actions) | Workers AI (inline)        |
+| URL Content    | Raw URL only                   | Full content via Firecrawl |
+| Output         | `00_Inbox/*.md`                | Direct to PARA folders     |
+| Cost           | $0                             | $0                         |
+| Dependencies   | Crucible + Actions             | Self-contained             |
 
 ## Migration from v1
 
@@ -212,7 +220,8 @@ If you have an existing Sprite v1 deployment:
 3. Optionally: Delete Crucible workflows from vault repo
 4. Optionally: Manually classify old inbox files or archive them
 
-v2 does **not** process existing `00_Inbox/` files - it only handles new messages from the queue.
+v2 does **not** process existing `00_Inbox/` files - it only handles new
+messages from the queue.
 
 ## Troubleshooting
 

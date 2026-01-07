@@ -2,7 +2,9 @@ import type { ProcessedMessage, ClassificationResult } from '../types/queue'
 import { CLASSIFICATION_PROMPT } from '../prompts/classify'
 import { chatCompletion } from '../lib/ai-gateway'
 
-export function buildClassificationPrompt(messages: ProcessedMessage[]): string {
+export function buildClassificationPrompt(
+  messages: ProcessedMessage[],
+): string {
   const payload = messages.map((m, i) => ({
     index: i,
     text: m.text.substring(0, 4000),
@@ -52,4 +54,3 @@ function parseClassificationResult(response: string): ClassificationResult {
     throw error
   }
 }
-

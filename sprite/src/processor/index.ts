@@ -5,7 +5,10 @@ import { writeClassifiedToGitHub } from './github'
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    console.log('Scheduled worker triggered at:', new Date(event.scheduledTime).toISOString())
+    console.log(
+      'Scheduled worker triggered at:',
+      new Date(event.scheduledTime).toISOString(),
+    )
 
     try {
       await processQueue(env, ctx)
@@ -16,7 +19,10 @@ export default {
   },
 }
 
-async function processQueue(env: Env, ctx: ExecutionContext): Promise<void> {
+export async function processQueue(
+  env: Env,
+  ctx?: ExecutionContext,
+): Promise<void> {
   const messages = await readQueue(env)
 
   if (messages.length === 0) {

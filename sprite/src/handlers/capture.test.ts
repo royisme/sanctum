@@ -48,9 +48,7 @@ describe('createCaptureHandler', () => {
     const handler = createCaptureHandler()
     const ctx = createMockContext({
       text: 'Check this https://example.com/page out',
-      entities: [
-        { type: 'url', offset: 11, length: 24 },
-      ],
+      entities: [{ type: 'url', offset: 11, length: 24 }],
     })
     const result = await handler(ctx)
 

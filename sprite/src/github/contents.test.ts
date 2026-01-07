@@ -11,7 +11,7 @@ describe('encodeBase64', () => {
   it('encodes UTF-8 string with Chinese characters', () => {
     const result = encodeBase64('你好世界')
     const decoded = new TextDecoder().decode(
-      Uint8Array.from(atob(result), (c) => c.charCodeAt(0))
+      Uint8Array.from(atob(result), (c) => c.charCodeAt(0)),
     )
     expect(decoded).toBe('你好世界')
   })
@@ -19,7 +19,7 @@ describe('encodeBase64', () => {
   it('encodes mixed ASCII and Unicode', () => {
     const result = encodeBase64('Hello 世界!')
     const decoded = new TextDecoder().decode(
-      Uint8Array.from(atob(result), (c) => c.charCodeAt(0))
+      Uint8Array.from(atob(result), (c) => c.charCodeAt(0)),
     )
     expect(decoded).toBe('Hello 世界!')
   })
@@ -97,12 +97,15 @@ describe('writeDailyFile', () => {
   })
 
   it('updates existing file with SHA', async () => {
-    const existingContent = encodeBase64('---\ndate: 2024-01-15\n---\n\n## 09:00\n\n- 09:15 Earlier message')
+    const existingContent = encodeBase64(
+      '---\ndate: 2024-01-15\n---\n\n## 09:00\n\n- 09:15 Earlier message',
+    )
     mockFetch
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ content: existingContent, sha: 'abc123' }),
+        json: () =>
+          Promise.resolve({ content: existingContent, sha: 'abc123' }),
       })
       .mockResolvedValueOnce({ ok: true, status: 200 })
 
@@ -128,7 +131,7 @@ describe('writeDailyFile', () => {
     })
 
     await expect(writeDailyFile(mockOutput, { env: mockEnv })).rejects.toThrow(
-      'GitHub read failed: 500'
+      'GitHub read failed: 500',
     )
   })
 
@@ -142,7 +145,7 @@ describe('writeDailyFile', () => {
       })
 
     await expect(writeDailyFile(mockOutput, { env: mockEnv })).rejects.toThrow(
-      'GitHub write failed: 403'
+      'GitHub write failed: 403',
     )
   })
 })

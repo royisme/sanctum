@@ -38,7 +38,9 @@ describe('formatMarkdown', () => {
     expect(result.markdownContent).toContain('---')
     expect(result.markdownContent).toContain('source-type: text')
     expect(result.markdownContent).toContain('source-url: ""')
-    expect(result.markdownContent).toContain('created-at: "2024-01-15T10:30:00.000Z"')
+    expect(result.markdownContent).toContain(
+      'created-at: "2024-01-15T10:30:00.000Z"',
+    )
     expect(result.markdownContent).toContain('tags: []')
     expect(result.markdownContent).toContain('language: ""')
     expect(result.markdownContent).toContain('Hello world')
@@ -111,7 +113,13 @@ describe('createDailyFileContent', () => {
   it('creates file with frontmatter and sections', () => {
     const entries = new Map<string, InboxEntry[]>()
     entries.set('10:00', [
-      { time: '10:30', hour: '10:00', text: 'First', sourceType: 'text', sourceUrl: '' },
+      {
+        time: '10:30',
+        hour: '10:00',
+        text: 'First',
+        sourceType: 'text',
+        sourceUrl: '',
+      },
     ])
 
     const content = createDailyFileContent('2024-01-15', entries)
@@ -124,10 +132,22 @@ describe('createDailyFileContent', () => {
   it('sorts hours chronologically', () => {
     const entries = new Map<string, InboxEntry[]>()
     entries.set('14:00', [
-      { time: '14:30', hour: '14:00', text: 'Afternoon', sourceType: 'text', sourceUrl: '' },
+      {
+        time: '14:30',
+        hour: '14:00',
+        text: 'Afternoon',
+        sourceType: 'text',
+        sourceUrl: '',
+      },
     ])
     entries.set('09:00', [
-      { time: '09:15', hour: '09:00', text: 'Morning', sourceType: 'text', sourceUrl: '' },
+      {
+        time: '09:15',
+        hour: '09:00',
+        text: 'Morning',
+        sourceType: 'text',
+        sourceUrl: '',
+      },
     ])
 
     const content = createDailyFileContent('2024-01-15', entries)

@@ -16,7 +16,7 @@ cd sprite
 bunx wrangler kv namespace create INBOX_QUEUE
 # Output: { binding = "INBOX_QUEUE", id = "xxxxx" }
 
-# Create preview KV namespace  
+# Create preview KV namespace
 bunx wrangler kv namespace create INBOX_QUEUE --preview
 # Output: { binding = "INBOX_QUEUE", preview_id = "xxxxx" }
 ```
@@ -59,8 +59,8 @@ Update `sprite/wrangler.jsonc` with your details:
     "REPO_NAME": "your-vault-repo",
     "CF_ACCOUNT_ID": "your-cloudflare-account-id", // Find in CF Dashboard URL
     "AI_GATEWAY_ID": "sanctum-classifier",
-    "AI_MODEL": "workers-ai/@cf/meta/llama-3.1-8b-instruct" // or "openai/gpt-4o", etc.
-  }
+    "AI_MODEL": "workers-ai/@cf/meta/llama-3.1-8b-instruct", // or "openai/gpt-4o", etc.
+  },
 }
 ```
 
@@ -79,23 +79,28 @@ curl -F "url=https://sprite.your-account.workers.dev/<YOUR_BOT_TOKEN>" \
 ```
 
 Replace:
+
 - `sprite.your-account.workers.dev` with your actual worker domain
 - `<YOUR_BOT_TOKEN>` with your actual bot token
 
 ## Step 6: Test
 
-Send a message to your Telegram bot. You should receive a "✓" response immediately.
+Send a message to your Telegram bot. You should receive a "✓" response
+immediately.
 
-After 15 minutes (next cron run), check your GitHub vault to see the classified message.
+After 15 minutes (next cron run), check your GitHub vault to see the classified
+message.
 
 ## Monitoring
 
 View logs:
+
 ```bash
 bunx wrangler tail
 ```
 
 Check queue status:
+
 ```bash
 bunx wrangler kv:key list --namespace-id=<YOUR_KV_ID> --prefix=inbox:
 ```
@@ -106,7 +111,8 @@ bunx wrangler kv:key list --namespace-id=<YOUR_KV_ID> --prefix=inbox:
 
 1. Check worker logs: `bunx wrangler tail`
 2. Check KV queue: `bunx wrangler kv:key list --namespace-id=<ID>`
-3. Manually trigger scheduled worker (in Cloudflare Dashboard > Workers > sprite > Triggers > Cron Triggers > Run Now)
+3. Manually trigger scheduled worker (in Cloudflare Dashboard > Workers >
+   sprite > Triggers > Cron Triggers > Run Now)
 
 ### Classification errors
 
@@ -116,14 +122,14 @@ bunx wrangler kv:key list --namespace-id=<YOUR_KV_ID> --prefix=inbox:
 
 ## Environment Variables
 
-| Variable | Source | Description |
-|----------|--------|-------------|
-| `TELEGRAM_BOT_TOKEN` | Secret | Bot token from @BotFather |
-| `GITHUB_TOKEN` | Secret | GitHub PAT with repo scope |
-| `FIRECRAWL_API_KEY` | Secret | Firecrawl API key |
-| `REPO_OWNER` | Config | GitHub repo owner (in wrangler.jsonc) |
-| `REPO_NAME` | Config | GitHub repo name (in wrangler.jsonc) |
-| `AI_GATEWAY_ID` | Config | AI Gateway ID (in wrangler.jsonc) |
+| Variable             | Source | Description                           |
+| -------------------- | ------ | ------------------------------------- |
+| `TELEGRAM_BOT_TOKEN` | Secret | Bot token from @BotFather             |
+| `GITHUB_TOKEN`       | Secret | GitHub PAT with repo scope            |
+| `FIRECRAWL_API_KEY`  | Secret | Firecrawl API key                     |
+| `REPO_OWNER`         | Config | GitHub repo owner (in wrangler.jsonc) |
+| `REPO_NAME`          | Config | GitHub repo name (in wrangler.jsonc)  |
+| `AI_GATEWAY_ID`      | Config | AI Gateway ID (in wrangler.jsonc)     |
 
 ## Architecture
 

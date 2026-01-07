@@ -1,8 +1,17 @@
-import type { CaptureEvent, MarkdownOutput, DailyFileOutput, InboxEntry } from '../types'
+import type {
+  CaptureEvent,
+  MarkdownOutput,
+  DailyFileOutput,
+  InboxEntry,
+} from '../types'
 
 function escapeYamlString(value: string): string {
   if (!value) return '""'
-  if (/[:[\]{}&*?|>!%#@`'",\n]/.test(value) || value.startsWith(' ') || value.endsWith(' ')) {
+  if (
+    /[:[\]{}&*?|>!%#@`'",\n]/.test(value) ||
+    value.startsWith(' ') ||
+    value.endsWith(' ')
+  ) {
     return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`
   }
   return value
@@ -27,8 +36,8 @@ export function formatMarkdown(event: CaptureEvent): MarkdownOutput {
     'source-type': event.sourceType,
     'source-url': event.sourceUrl,
     'created-at': event.createdAt,
-    tags: event.tags,
-    language: event.language,
+    'tags': event.tags,
+    'language': event.language,
   }
 
   const yamlContent = Object.entries(frontmatter)
@@ -64,7 +73,10 @@ export function formatDailyEntry(event: CaptureEvent): DailyFileOutput {
   }
 }
 
-export function createDailyFileContent(date: string, entries: Map<string, InboxEntry[]>): string {
+export function createDailyFileContent(
+  date: string,
+  entries: Map<string, InboxEntry[]>,
+): string {
   const frontmatter = `---\ndate: ${date}\n---\n`
 
   const sortedHours = Array.from(entries.keys()).sort()
@@ -126,9 +138,11 @@ export function parseDailyFile(content: string): Map<string, InboxEntry[]> {
 
 export function mergeEntry(
   existingContent: string | null,
-  newOutput: DailyFileOutput
+  newOutput: DailyFileOutput,
 ): string {
-  const entries = existingContent ? parseDailyFile(existingContent) : new Map<string, InboxEntry[]>()
+  const entries = existingContent
+    ? parseDailyFile(existingContent)
+    : new Map<string, InboxEntry[]>()
 
   const hourEntries = entries.get(newOutput.entry.hour) || []
   hourEntries.push(newOutput.entry)

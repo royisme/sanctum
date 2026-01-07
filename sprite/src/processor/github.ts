@@ -19,7 +19,10 @@ function sanitizeTopic(topic: string): string {
   return clean.substring(0, 80) || 'Misc'
 }
 
-function formatMarkdown(msg: ProcessedMessage, classification: ClassificationItem): string {
+function formatMarkdown(
+  msg: ProcessedMessage,
+  classification: ClassificationItem,
+): string {
   const frontmatter = [
     '---',
     `source: ${msg.sourceUrl || 'text'}`,
@@ -40,7 +43,11 @@ function formatMarkdown(msg: ProcessedMessage, classification: ClassificationIte
 
 function generateFilename(msg: ProcessedMessage): string {
   const date = new Date(msg.createdAt).toISOString().split('T')[0]
-  const time = new Date(msg.createdAt).toISOString().split('T')[1].split('.')[0].replace(/:/g, '-')
+  const time = new Date(msg.createdAt)
+    .toISOString()
+    .split('T')[1]
+    .split('.')[0]
+    .replace(/:/g, '-')
   return `${date}-${time}.md`
 }
 
@@ -78,13 +85,16 @@ export async function writeClassifiedToGitHub(
   }
 }
 
-async function writeSingleFile(file: GitHubFileContent, env: Env): Promise<void> {
+async function writeSingleFile(
+  file: GitHubFileContent,
+  env: Env,
+): Promise<void> {
   const url = `https://api.github.com/repos/${env.REPO_OWNER}/${env.REPO_NAME}/contents/${file.path}`
 
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
-      Authorization: `token ${env.GITHUB_TOKEN}`,
+      'Authorization': `token ${env.GITHUB_TOKEN}`,
       'Content-Type': 'application/json',
       'User-Agent': 'Sanctum-Sprite',
     },

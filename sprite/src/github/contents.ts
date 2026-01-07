@@ -31,7 +31,7 @@ interface GitHubFileResponse {
 
 async function getExistingFile(
   path: string,
-  env: Env
+  env: Env,
 ): Promise<{ content: string; sha: string } | null> {
   const { GITHUB_TOKEN, REPO_OWNER, REPO_NAME } = env
 
@@ -40,11 +40,11 @@ async function getExistingFile(
     {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github.v3+json',
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
         'User-Agent': 'sprite-bot',
       },
-    }
+    },
   )
 
   if (response.status === 404) {
@@ -66,7 +66,7 @@ async function getExistingFile(
 
 export async function writeDailyFile(
   output: DailyFileOutput,
-  options: GitHubWriteOptions
+  options: GitHubWriteOptions,
 ): Promise<void> {
   const { GITHUB_TOKEN, REPO_OWNER, REPO_NAME } = options.env
   const path = `00_Inbox/${output.filename}`
@@ -89,13 +89,13 @@ export async function writeDailyFile(
     {
       method: 'PUT',
       headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github.v3+json',
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
         'User-Agent': 'sprite-bot',
       },
       body: JSON.stringify(body),
-    }
+    },
   )
 
   if (!response.ok) {

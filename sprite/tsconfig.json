@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "strict": true,
     "skipLibCheck": true,
-    "lib": ["ESNext"],
-    "types": ["vite/client", "@cloudflare/workers-types"]
-  }
+    "strict": true,
+    "target": "ESNext",
+    "types": ["vite/client", "./worker-configuration.d.ts"]
+  },
+  "include": ["src/**/*.ts"]
 }
