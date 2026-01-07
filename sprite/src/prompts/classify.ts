@@ -19,6 +19,10 @@ Classification Guidelines:
 - archives: Completed or inactive items
 - jobs: Job postings, career opportunities
 
+Output Rules:
+- topic: Use the SAME LANGUAGE as the input. Be specific and searchable (e.g., "React-Hooks" not "frontend", "语音转文字" not "AI")
+- summary: Use the SAME LANGUAGE as the input. Keep it concise but informative.
+
 Task:
 Classify the following messages. If a message contains a URL, use the content to determine the category.
 `
