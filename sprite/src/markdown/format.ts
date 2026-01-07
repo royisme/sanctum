@@ -2,7 +2,7 @@ import type { CaptureEvent, MarkdownOutput, DailyFileOutput, InboxEntry } from '
 
 function escapeYamlString(value: string): string {
   if (!value) return '""'
-  if (/[:\[\]{}&*?|>!%#@`'",\n]/.test(value) || value.startsWith(' ') || value.endsWith(' ')) {
+  if (/[:[\]{}&*?|>!%#@`'",\n]/.test(value) || value.startsWith(' ') || value.endsWith(' ')) {
     return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`
   }
   return value

@@ -10,6 +10,13 @@ declare namespace Cloudflare {
 		GITHUB_TOKEN: string;
 		REPO_OWNER: string;
 		REPO_NAME: string;
+		CF_ACCOUNT_ID: string;
+		AI_GATEWAY_ID: string;
+		AI_MODEL: string;
+		AI_API_KEY: string; // Provider API Key (optional for Workers AI if using binding, but needed for Universal)
+		INBOX_QUEUE: KVNamespace;
+		AI: Ai;
+		FIRECRAWL_API_KEY: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

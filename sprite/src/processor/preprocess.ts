@@ -1,14 +1,20 @@
 import type { QueueMessage, ProcessedMessage } from '../types/queue'
 
+interface FirecrawlResponse {
+  data?: {
+    markdown?: string
+  }
+}
+
 const URL_PREFIX_PATTERN = /^(链接[：:]\s*|link[：:]\s*)/i
 
 export function cleanText(text: string): string {
   return text.replace(URL_PREFIX_PATTERN, '').trim()
 }
 
-export function detectUrlType(url: string): 'youtube' | 'normal' {
-  if (!url) return 'normal'
-  return /youtube\.com|youtu\.be/i.test(url) ? 'youtube' : 'normal'
+export function detectUrlType(url: string): 'youtube' | 'url' {
+  if (!url) return 'url'
+  return /youtube\.com|youtu\.be/i.test(url) ? 'youtube' : 'url'
 }
 
 export async function enrichUrl(url: string, env: Env): Promise<string | null> {
@@ -18,7 +24,7 @@ export async function enrichUrl(url: string, env: Env): Promise<string | null> {
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${env.FIRECRAWL_API_KEY}`,
+        'Authorization': `Bearer ${env.FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -33,7 +39,7 @@ export async function enrichUrl(url: string, env: Env): Promise<string | null> {
       return null
     }
 
-    const data = await response.json()
+    const data = (await response.json()) as FirecrawlResponse
     return data.data?.markdown || null
   } catch (error) {
     console.error('Firecrawl enrichment failed:', error)
@@ -67,7 +73,11 @@ export async function preprocessBatch(
 
   const enriched = await Promise.all(
     processed.map(async (msg) => {
-      if (msg.needsEnrichment && msg.sourceUrl && msg.sourceType !== 'youtube') {
+      if (
+        msg.needsEnrichment &&
+        msg.sourceUrl &&
+        msg.sourceType !== 'youtube'
+      ) {
         const content = await enrichUrl(msg.sourceUrl, env)
         if (content) {
           return {

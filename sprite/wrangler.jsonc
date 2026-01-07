@@ -6,7 +6,9 @@
   "vars": {
     "REPO_OWNER": "royisme",
     "REPO_NAME": "myObsidian",
+    "CF_ACCOUNT_ID": "b07035f797855635883b3ec8062757ff",
     "AI_GATEWAY_ID": "sanctum-classifier",
+    "AI_MODEL": "dynamic/sanctum-classifier",
   },
   "kv_namespaces": [
     {

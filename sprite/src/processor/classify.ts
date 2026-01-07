@@ -1,4 +1,6 @@
 import type { ProcessedMessage, ClassificationResult } from '../types/queue'
+import { CLASSIFICATION_PROMPT } from '../prompts/classify'
+import { chatCompletion } from '../lib/ai-gateway'
 
 export function buildClassificationPrompt(messages: ProcessedMessage[]): string {
   const payload = messages.map((m, i) => ({
@@ -8,26 +10,7 @@ export function buildClassificationPrompt(messages: ProcessedMessage[]): string 
     type: m.sourceType,
   }))
 
-  return `You are a PARA classifier. Return JSON only.
-
-Schema:
-{
-  "items": [
-    {
-      "index": 0,
-      "category": "projects|areas|resources|archives|jobs",
-      "topic": "topic-name",
-      "summary": "short summary"
-    }
-  ]
-}
-
-Classification Guidelines:
-- projects: Active work with deadlines
-- areas: Ongoing responsibilities (health, finance, learning)
-- resources: Reference materials, articles, tools
-- archives: Completed or inactive items
-- jobs: Job postings, career opportunities
+  return `${CLASSIFICATION_PROMPT}
 
 Messages:
 ${payload.map((m) => `[${m.index}] ${m.text}\n  Type: ${m.type}\n  Source: ${m.source}`).join('\n\n')}`
@@ -39,49 +22,34 @@ export async function classifyWithWorkersAI(
 ): Promise<ClassificationResult> {
   const prompt = buildClassificationPrompt(messages)
 
-  const response = await env.AI.run(
-    '@cf/meta/llama-3.1-8b-instruct',
-    {
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a PARA classifier. Return JSON only.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    },
-    {
-      gateway: {
-        id: env.AI_GATEWAY_ID,
-        skipCache: false,
-        cacheTtl: 3600,
+  const content = await chatCompletion(
+    env,
+    [
+      {
+        role: 'system',
+        content: 'You are a PARA classifier. Return JSON only.',
       },
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ],
+    {
+      response_format: { type: 'json_object' },
     },
   )
 
-  return parseClassificationResult(response)
+  return parseClassificationResult(content)
 }
 
-function parseClassificationResult(response: any): ClassificationResult {
+function parseClassificationResult(response: string): ClassificationResult {
   try {
-    if (typeof response === 'string') {
-      return JSON.parse(response)
-    }
-
-    if (response.response) {
-      return JSON.parse(response.response)
-    }
-
-    if (response.items) {
-      return response as ClassificationResult
-    }
-
-    throw new Error('Unexpected response format')
+    // Clean up markdown code blocks if present
+    const cleanContent = response.replace(/^```json\n|\n```$/g, '').trim()
+    return JSON.parse(cleanContent)
   } catch (error) {
     console.error('Failed to parse classification result:', error)
     throw error
   }
 }
+

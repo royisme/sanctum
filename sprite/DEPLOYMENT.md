@@ -13,11 +13,11 @@
 cd sprite
 
 # Create production KV namespace
-bunx wrangler kv:namespace create INBOX_QUEUE
+bunx wrangler kv namespace create INBOX_QUEUE
 # Output: { binding = "INBOX_QUEUE", id = "xxxxx" }
 
 # Create preview KV namespace  
-bunx wrangler kv:namespace create INBOX_QUEUE --preview
+bunx wrangler kv namespace create INBOX_QUEUE --preview
 # Output: { binding = "INBOX_QUEUE", preview_id = "xxxxx" }
 ```
 
@@ -41,9 +41,30 @@ bunx wrangler secret put GITHUB_TOKEN
 
 # Firecrawl API Key
 bunx wrangler secret put FIRECRAWL_API_KEY
+
+# AI Provider API Key (Required for Universal Endpoint)
+# For Workers AI: Create a Cloudflare API Token with "Workers AI Read" permission
+# For OpenAI/Grok: Use your provider's API Key
+bunx wrangler secret put AI_API_KEY
 ```
 
-## Step 4: Deploy
+## Step 4: Configure Wrangler
+
+Update `sprite/wrangler.jsonc` with your details:
+
+```jsonc
+{
+  "vars": {
+    "REPO_OWNER": "your-github-username",
+    "REPO_NAME": "your-vault-repo",
+    "CF_ACCOUNT_ID": "your-cloudflare-account-id", // Find in CF Dashboard URL
+    "AI_GATEWAY_ID": "sanctum-classifier",
+    "AI_MODEL": "workers-ai/@cf/meta/llama-3.1-8b-instruct" // or "openai/gpt-4o", etc.
+  }
+}
+```
+
+## Step 5: Deploy
 
 ```bash
 bun install

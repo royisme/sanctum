@@ -44,6 +44,13 @@ describe('writeDailyFile', () => {
     GITHUB_TOKEN: 'test-token',
     REPO_OWNER: 'testowner',
     REPO_NAME: 'testrepo',
+    CF_ACCOUNT_ID: 'test-account-id',
+    AI_GATEWAY_ID: 'test-gateway-id',
+    AI_MODEL: 'test-model',
+    AI_API_KEY: 'test-ai-key',
+    FIRECRAWL_API_KEY: 'test-firecrawl-key',
+    INBOX_QUEUE: {} as KVNamespace,
+    AI: {} as Ai,
   }
 
   const mockOutput: DailyFileOutput = {

@@ -8,7 +8,11 @@
     "deploy": "$npm_execpath run build && wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "check": "tsc --noEmit",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix && prettier --write .",
+    "precommit": "lint-staged"
   },
   "dependencies": {
     "hono": "^4.11.3",
@@ -17,8 +21,22 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.17.1",
     "@cloudflare/workers-types": "^3.14.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "oxlint": "^1.38.0",
+    "oxlint-tsgolint": "^0.10.1",
+    "prettier": "^3.7.4",
+    "prettier-plugin-packagejson": "^2.5.20",
+    "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.54.0"
+  },
+  "lint-staged": {
+    ".{ts,js}": "eslint --cache --fix",
+    ".{ts,js,css,md}": "prettier --write",
+    ".js": "eslint --cache --fix",
+    ".{js,css,md}": "prettier --write",
+    ".{json,yml}": "prettier --write"
   }
 }
