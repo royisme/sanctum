@@ -35,14 +35,22 @@ export async function enrichUrl(url: string, env: Env): Promise<string | null> {
     })
 
     if (!response.ok) {
-      console.error('Firecrawl API error:', response.status)
+      console.warn(
+        `Firecrawl API error for ${url}: ${response.status} - will use URL as text`,
+      )
       return null
     }
 
     const data = (await response.json()) as FirecrawlResponse
-    return data.data?.markdown || null
+    const content = data.data?.markdown || null
+
+    if (!content) {
+      console.warn(`Firecrawl returned empty content for ${url} - will use URL as text`)
+    }
+
+    return content
   } catch (error) {
-    console.error('Firecrawl enrichment failed:', error)
+    console.error(`Firecrawl enrichment failed for ${url}:`, error)
     return null
   }
 }
@@ -87,6 +95,8 @@ export async function preprocessBatch(
             needsEnrichment: false,
           }
         }
+        // If Firecrawl failed, keep the URL as text (already set in preprocessMessage)
+        console.log(`Using URL as text for: ${msg.sourceUrl}`)
       }
       return msg
     }),
