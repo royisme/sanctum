@@ -8,38 +8,23 @@
 
 ### 1.1 Purpose
 
-Sanctum (圣所) 是一个"云端采集 + 本地深耕"的知识管理系统：
-- 24/7 无人值守的信息捕获 (Telegram Bot → Cloudflare Worker)
-- 实时 AI 分类 (Workers AI Gateway)
-- 本地深度转化 (Obsidian + Claude Code)
+A "Cloud Capture + Local Cultivation" knowledge management system:
+- 24/7 unattended information capture (Telegram Bot → Cloudflare Worker)
+- Real-time AI classification (Workers AI Gateway)
+- Local deep transformation (Obsidian + Claude Code Plugin)
 
-### 1.2 Naming Theme
+### 1.2 Components
 
-中古魔幻风格命名体系：
+| Component | Responsibility |
+|-----------|---------------|
+| **Sprite** | Telegram message capture, AI classification, and GitHub vault writing |
+| **Claude Code Plugin** | Local tools for resume generation and vault initialization |
 
-| 组件 | 名称 | 含义 | 职责 |
-|------|------|------|------|
-| 系统 | **Sanctum** | 圣所 | 魔法师的私密领地 |
-| 捕获 | **Sprite** | 精灵 | 云端采集 + 分类 + 写入 |
-| 转化 | **Commands** | 咒语 | Claude Code 自定义命令 |
+### 1.3 Non-Goals (v2.0)
 
-**叙事**：
-> 精灵 (Sprite) 穿梭于信息之间，捕获碎片带回圣所，
-> 自动分类归档；魔法师在本地使用咒语 (Commands) 进行深度转化。
-
-### 1.3 User Stories
-
-| ID | As a... | I want to... | So that... |
-|----|---------|--------------|------------|
-| US-1 | 用户 | 在手机上随手转发文章到 TG Bot | 碎片信息自动归档到 PARA 目录 |
-| US-2 | 用户 | 系统实时将消息分类到 PARA 目录 | 无需手动整理，打开 Obsidian 就能看到 |
-| US-3 | 用户 | 在本地用 `/generate-resume job.md` | 快速产出求职材料 |
-
-### 1.4 Non-Goals (v2.0)
-
-- 不支持 Web Clipper (未来扩展)
-- 不支持多用户
-- 不再使用 GitHub Actions 批处理 (已被实时处理取代)
+- No Web Clipper (future enhancement)
+- No multi-user support
+- No GitHub Actions batch processing (replaced by real-time processing)
 
 ---
 
@@ -170,23 +155,46 @@ sprite/
 └── package.json
 ```
 
-**Environment Variables** (Wrangler Secrets):
+**Environment Variables** (Wrangler):
+
+**Secrets** (use `wrangler secret put`):
 
 | Name | Required | Description |
 |------|----------|-------------|
 | `TELEGRAM_BOT_TOKEN` | Yes | Bot token from @BotFather |
 | `GITHUB_TOKEN` | Yes | PAT with `repo` scope |
 | `FIRECRAWL_API_KEY` | Yes | Firecrawl API key |
-| `AI_API_KEY` | Yes | AI provider API key |
-| `REPO_OWNER` | Yes | Target vault repo owner |
-| `REPO_NAME` | Yes | Target vault repo name |
-| `CF_ACCOUNT_ID` | Yes | Cloudflare account ID |
-| `AI_GATEWAY_ID` | Yes | AI Gateway ID |
+| `AI_API_KEY` | Yes | AI Gateway authentication key |
+
+**Configuration Variables** (in `wrangler.jsonc`):
+
+| Name | Description |
+|------|-------------|
+| `REPO_OWNER` | Target vault repo owner |
+| `REPO_NAME` | Target vault repo name |
+| `CF_ACCOUNT_ID` | Cloudflare account ID |
+| `AI_GATEWAY_ID` | AI Gateway ID |
+| `AI_MODEL` | AI model name (e.g., `dynamic/sanctum-classifier`) |
+
+**Bindings**:
+
+| Binding | Type | Description |
+|---------|------|-------------|
+| `INBOX_QUEUE` | KV Namespace | Message queue storage |
+| `AI` | Workers AI | LLM inference binding |
 
 **Deployment**:
 ```bash
 cd sprite
 bun install
+
+# Configure wrangler.jsonc (add your REPO_OWNER, REPO_NAME, etc.)
+bunx wrangler secret put TELEGRAM_BOT_TOKEN
+bunx wrangler secret put GITHUB_TOKEN
+bunx wrangler secret put FIRECRAWL_API_KEY
+bunx wrangler secret put AI_API_KEY
+
+# Deploy
 bun run deploy
 ```
 
@@ -306,7 +314,13 @@ target-vault/
 ```bash
 cd sprite
 bun install
-bunx wrangler login
+
+# Configure wrangler.jsonc with your values:
+# - REPO_OWNER: your GitHub username
+# - REPO_NAME: your vault repository name
+# - CF_ACCOUNT_ID: your Cloudflare account ID
+# - AI_GATEWAY_ID: your AI Gateway ID
+# - AI_MODEL: model name (e.g., dynamic/sanctum-classifier)
 
 # Set secrets
 bunx wrangler secret put TELEGRAM_BOT_TOKEN
@@ -317,24 +331,27 @@ bunx wrangler secret put AI_API_KEY
 # Deploy
 bun run deploy
 
-# Set Telegram webhook
-curl "https://api.telegram.org/bot{TOKEN}/setWebhook?url=https://sprite.{account}.workers.dev/{TOKEN}"
+# Set Telegram webhook (replace with your bot token and worker domain)
+curl "https://api.telegram.org/bot{TOKEN}/setWebhook?url=https://your-worker-domain/{TOKEN}"
 ```
 
 ### 5.3 Target Vault Setup
 
 1. Clone your Target Vault repository
-2. Copy commands to `.claude/commands/`:
+2. Install the Sanctum Crucible plugin:
    ```bash
-   mkdir -p .claude/commands
-   # Copy command files from this repo's docs/commands/
+   /plugin install https://github.com/royzhu/gatherer.git#subdirectory=crucible
    ```
-3. Copy templates to `Templates/`:
+3. Initialize vault structure:
+   ```bash
+   /init-vault
+   ```
+4. Copy templates to `Templates/` if needed:
    ```bash
    mkdir -p Templates
-   # Copy template files
+   # Copy template files from crucible/templates/
    ```
-4. Commit and push
+5. Commit and push
 
 ### 5.4 Local Development
 
